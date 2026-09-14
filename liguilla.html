@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>Liguilla de Pádel</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+
+  :root{
+    --bg: #0E2A38;
+    --surface: #153B4D;
+    --surface-2: #1C4A5F;
+    --line: #2C5C71;
+    --ink: #F2F0E8;
+    --ink-dim: #9FB8C4;
+    --ball: #E8D44D;
+    --ball-dark: #C9AE2A;
+    --clay: #E2672A;
+    --win: #6FBF8B;
+    --radius: 10px;
+  }
+  *{ box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Inter', system-ui, sans-serif;
+    min-height: 100vh;
+    padding-bottom: 76px;
+  }
+  h1,h2,h3,.num{ font-family:'Oswald', 'Arial Narrow', sans-serif; letter-spacing: 0.01em; }
+
+  header{
+    padding: 22px 18px 16px;
+    border-bottom: 1px solid var(--line);
+    display:flex; align-items:baseline; justify-content:space-between;
+  }
+  header h1{ font-size: 22px; font-weight:700; margin:0; color: var(--ink); }
+  header .sub{ font-size: 12.5px; color: var(--ink-dim); }
+
+  main{ padding: 16px; max-width: 560px; margin: 0 auto; }
+
+  .card{
+    background: var(--surface);
+    border-left: 3px solid var(--line);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin-bottom: 12px;
+  }
+  .card.open{ border-left-color: var(--ball); }
+  .card.done{ border-left-color: var(--win); }
+
+  button{
+    font-family:'Inter', sans-serif;
+    font-weight:600;
+    border:none;
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-size: 14.5px;
+    cursor:pointer;
+  }
+  .btn-primary{ background: var(--ball); color: #17323F; }
+  .btn-primary:active{ background: var(--ball-dark); }
+  .btn-ghost{ background: transparent; color: var(--ink); border: 1px solid var(--line); }
+  .btn-danger{ background: transparent; color: var(--clay); border: 1px solid var(--clay); }
+  .btn-block{ width:100%; }
+  .btn-sm{ padding: 6px 12px; font-size: 13px; }
+
+  input[type=text], input[type=number]{
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    border-radius: 7px;
+    padding: 9px 10px;
+    font-size: 15px;
+    font-family: 'Inter', sans-serif;
+    width: 100%;
+  }
+  input[type=number]{ text-align:center; width: 56px; padding: 9px 4px; }
+  label{ font-size: 12.5px; color: var(--ink-dim); display:block; margin-bottom: 4px; }
+
+  .field{ margin-bottom: 10px; }
+
+  .tabbar{
+    position: fixed; bottom:0; left:0; right:0;
+    display:flex; background: var(--surface);
+    border-top: 1px solid var(--line);
+    padding: 6px 6px calc(6px + env(safe-area-inset-bottom));
+  }
+  .tabbar button{
+    flex:1; background:none; color: var(--ink-dim);
+    display:flex; flex-direction:column; align-items:center; gap:2px;
+    font-size: 11.5px; padding: 8px 4px; border-radius: 8px;
+  }
+  .tabbar button.active{ color: var(--ball); background: rgba(232,212,77,0.08); }
+  .tabbar .ic{ font-size: 18px; }
+
+  .match{
+    display:flex; align-items:center; justify-content:space-between;
+    gap: 8px; padding: 10px 0; border-top: 1px solid var(--line);
+  }
+  .match:first-child{ border-top:none; }
+  .pairname{ font-size: 14px; flex:1; line-height:1.3; }
+  .pairname.winner{ color: var(--win); font-weight:600; }
+  .scorebox{ display:flex; align-items:center; gap:6px; }
+  .vs{ color: var(--ink-dim); font-size:12px; padding: 0 2px; }
+
+  .round-title{ font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-dim); margin: 14px 0 2px; }
+  .round-title:first-of-type{ margin-top:0; }
+
+  table{ width:100%; border-collapse: collapse; }
+  th,td{ text-align:left; padding: 8px 6px; font-size: 13.5px; border-bottom: 1px solid var(--line); }
+  th{ color: var(--ink-dim); font-weight:600; font-size: 11.5px; text-transform:uppercase; letter-spacing:0.05em; }
+  td.num, th.num{ text-align:center; }
+  tr.pos1 td:first-child{ color: var(--ball); font-weight:700; }
+
+  .pos{ display:inline-flex; width:20px; height:20px; border-radius:50%; background: var(--surface-2); align-items:center; justify-content:center; font-size:12px; font-weight:700; margin-right:6px; }
+  tr.pos1 .pos{ background: var(--ball); color:#17323F; }
+  tr.pos2 .pos{ background: #B9C4C9; color:#17323F; }
+  tr.pos3 .pos{ background: var(--clay); color:#fff; }
+
+  .empty{ text-align:center; color: var(--ink-dim); font-size: 14px; padding: 30px 10px; }
+  .jornada-header{ display:flex; justify-content:space-between; align-items:center; cursor:pointer; }
+  .jornada-header .tag{ font-size:11px; color: var(--ink-dim); }
+  .winner-strip{ margin-top:10px; padding-top:10px; border-top: 1px dashed var(--line); font-size:13px; color: var(--ball); }
+  .skip-note{ font-size: 12.5px; color: var(--ink-dim); font-style: italic; margin-top: 6px; }
+  .timeout-row{ display:flex; align-items:center; gap:6px; font-size:12.5px; color: var(--ink-dim); margin-top:4px; }
+
+  .confirm-box{ margin-top:8px; padding-top:8px; border-top: 1px dotted var(--line); }
+  .confirm-status{ font-size:12px; color: var(--ink-dim); margin-bottom:6px; }
+  .confirm-box.locked .confirm-status, .confirm-box.locked{ color: var(--win); font-size:12.5px; }
+  .confirm-controls{ display:flex; gap:6px; }
+  .confirm-select{ flex:1; background: var(--surface-2); border:1px solid var(--line); color: var(--ink); border-radius:7px; padding:7px 6px; font-size:13px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>🎾 Liguilla</h1>
+    <div class="sub" id="headerSub">Cargando…</div>
+  </div>
+  <button class="btn-ghost btn-sm" id="refreshBtn" style="display:none">🔄</button>
+</header>
+
+<main id="app"></main>
+
+<nav class="tabbar" id="tabbar" style="display:none">
+  <button data-tab="jornadas"><span class="ic">📅</span>Jornadas</button>
+  <button data-tab="clasificacion"><span class="ic">🏆</span>Clasificación</button>
+  <button data-tab="jugadores"><span class="ic">⚙️</span>Jugadores</button>
+</nav>
+
+<script>
+let state = { players: null, matchdays: [] };
+let activeTab = 'jornadas';
+let openMatchday = null;
+
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw5qTEsBlbccdKYX3hw5YtmGGaPUlm0BDxwx8LIUtP_emre4-xQeKIEq3dBG4GJwGft6A/exec';
+
+async function loadState(){
+  try{
+    const res = await fetch(SCRIPT_URL);
+    const text = await res.text();
+    const parsed = JSON.parse(text);
+    if(parsed && Object.keys(parsed).length){ state = parsed; }
+  }catch(e){ console.error('Error cargando datos', e); }
+  if(!state.matchdays) state.matchdays = [];
+  render();
+}
+
+async function saveState(){
+  try{
+    await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(state) });
+  }catch(e){ console.error('Error guardando datos', e); }
+}
+
+function generateSchedule(n){
+  const fixed = 0;
+  let rot = [];
+  for(let i=1;i<n;i++) rot.push(i);
+  const rounds = [];
+  for(let r=0;r<n-1;r++){
+    const pairs = [
+      [fixed, rot[0]],
+      [rot[1], rot[6]],
+      [rot[2], rot[5]],
+      [rot[3], rot[4]],
+    ];
+    rounds.push(pairs);
+    rot = [rot[6], ...rot.slice(0,6)];
+  }
+  return rounds;
+}
+
+function pairName(md, pairIdx){
+  const [i,j] = md.pairs[pairIdx];
+  return `${state.players[i]} / ${state.players[j]}`;
+}
+
+function matchDone(m){ return m && m.ga !== null && m.gb !== null && m.ga !== undefined && m.gb !== undefined; }
+
+function matchWinnerPairIdx(m){
+  if(!matchDone(m)) return null;
+  if(m.ga === m.gb) return null;
+  return m.ga > m.gb ? m.a : m.b;
+}
+
+function round1Complete(md){ return matchDone(md.round1[0]) && matchDone(md.round1[1]) && md.round1[0].ga !== md.round1[0].gb && md.round1[1].ga !== md.round1[1].gb; }
+function round2Complete(md){ return md.round2 && matchDone(md.round2[0]) && matchDone(md.round2[1]) && md.round2[0].ga !== md.round2[0].gb && md.round2[1].ga !== md.round2[1].gb; }
+
+function ensureRound2(md){
+  if(md.round2 || !round1Complete(md)) return;
+  const w1 = matchWinnerPairIdx(md.round1[0]);
+  const l1 = w1 === md.round1[0].a ? md.round1[0].b : md.round1[0].a;
+  const w2 = matchWinnerPairIdx(md.round1[1]);
+  const l2 = w2 === md.round1[1].a ? md.round1[1].b : md.round1[1].a;
+  md.round2 = [
+    { a: l1, b: w2, ga: null, gb: null, confirmedBy: [] },
+    { a: w1, b: l2, ga: null, gb: null, confirmedBy: [] }
+  ];
+}
+
+function ensureRound3Pairs(md){
+  if(md.round3 || md.round3Skipped || !round2Complete(md)) return null;
+  const w1 = matchWinnerPairIdx(md.round1[0]);
+  const l1 = w1 === md.round1[0].a ? md.round1[0].b : md.round1[0].a;
+  const w2 = matchWinnerPairIdx(md.round1[1]);
+  const l2 = w2 === md.round1[1].a ? md.round1[1].b : md.round1[1].a;
+  return [
+    { a: w1, b: w2, ga: null, gb: null, timeout:false, confirmedBy: [] },
+    { a: l1, b: l2, ga: null, gb: null, timeout:false, confirmedBy: [] }
+  ];
+}
+
+const CONFIRMATIONS_NEEDED = 3;
+function isLocked(m){ return m.confirmedBy && m.confirmedBy.length >= CONFIRMATIONS_NEEDED; }
+
+function normalizeMatchdays(){
+  state.matchdays.forEach(md => {
+    ensureRound2(md);
+    if(!md.round3 && !md.round3Skipped){
+      const r3 = ensureRound3Pairs(md);
+      if(r3) md.round3 = r3;
+    }
+  });
+}
+
+function computeAll(){
+  const totals = state.players.map(() => ({ points:0, favor:0, contra:0 }));
+  const jornadaWinners = [];
+
+  state.matchdays.forEach(md => {
+    const dayPts = state.players.map(()=>0);
+    const rounds = [md.round1, md.round2, (md.round3Skipped ? null : md.round3)].filter(Boolean);
+    rounds.forEach((round, ridx) => {
+      const isR3 = round === md.round3;
+      round.forEach(m => {
+        if(!matchDone(m)) return;
+        const [aP1, aP2] = md.pairs[m.a];
+        const [bP1, bP2] = md.pairs[m.b];
+        // games favor/contra
+        [aP1,aP2].forEach(p => { totals[p].favor += m.ga; totals[p].contra += m.gb; });
+        [bP1,bP2].forEach(p => { totals[p].favor += m.gb; totals[p].contra += m.ga; });
+        // points
+        if(isR3 && m.timeout && m.ga === m.gb){
+          [aP1,aP2,bP1,bP2].forEach(p => { totals[p].points += 2; dayPts[p] += 2; });
+        } else if(m.ga !== m.gb){
+          const winners = m.ga > m.gb ? [aP1,aP2] : [bP1,bP2];
+          winners.forEach(p => { totals[p].points += 3; dayPts[p] += 3; });
+        }
+      });
+    });
+    const max = Math.max(...dayPts);
+    jornadaWinners.push(max > 0 ? state.players.filter((_,i)=>dayPts[i]===max) : []);
+  });
+
+  const standings = state.players.map((name,i) => ({
+    name, points: totals[i].points, favor: totals[i].favor, contra: totals[i].contra,
+    diff: totals[i].favor - totals[i].contra
+  })).sort((a,b) => b.points - a.points || b.diff - a.diff || b.favor - a.favor);
+
+  return { standings, jornadaWinners };
+}
+
+function render(){
+  if(state.players) normalizeMatchdays();
+  document.getElementById('tabbar').style.display = state.players ? 'flex' : 'none';
+  document.getElementById('refreshBtn').style.display = state.players ? 'block' : 'none';
+  document.querySelectorAll('.tabbar button').forEach(b => b.classList.toggle('active', b.dataset.tab === activeTab));
+  document.getElementById('headerSub').textContent = state.players ? `${state.matchdays.length} jornada(s) jugada(s)` : 'Configura los 8 jugadores para empezar';
+
+  const app = document.getElementById('app');
+  if(!state.players){
+    app.innerHTML = renderPlayerSetup();
+    attachPlayerSetupEvents();
+    return;
+  }
+  if(activeTab === 'jugadores'){ app.innerHTML = renderPlayersTab(); attachPlayersTabEvents(); }
+  else if(activeTab === 'clasificacion'){ app.innerHTML = renderClasificacion(); }
+  else { app.innerHTML = renderJornadas(); attachJornadaEvents(); }
+}
+
+function renderPlayerSetup(){
+  let rows = '';
+  for(let i=0;i<8;i++){
+    rows += `<div class="field"><label>Jugador ${i+1}</label><input type="text" id="pname${i}" placeholder="Nombre"></div>`;
+  }
+  return `<div class="card"><h3 style="margin-top:0">Empecemos: los 8 jugadores</h3>${rows}
+    <button class="btn-primary btn-block" id="savePlayersBtn">Crear liguilla</button></div>`;
+}
+
+function attachPlayerSetupEvents(){
+  document.getElementById('savePlayersBtn').onclick = () => {
+    const names = [];
+    for(let i=0;i<8;i++){
+      const v = document.getElementById('pname'+i).value.trim();
+      names.push(v || `Jugador ${i+1}`);
+    }
+    state.players = names;
+    saveState();
+    render();
+  };
+}
+
+function renderPlayersTab(){
+  let rows = state.players.map((n,i) => `<div class="field"><label>Jugador ${i+1}</label><input type="text" id="ename${i}" value="${n.replace(/"/g,'&quot;')}"></div>`).join('');
+  return `<div class="card"><h3 style="margin-top:0">Jugadores</h3>${rows}
+    <button class="btn-primary btn-block" id="updateNamesBtn">Guardar nombres</button></div>
+    <div class="card"><h3 style="margin-top:0">Zona peligrosa</h3>
+    <p style="font-size:13px;color:var(--ink-dim)">Borra todas las jornadas y puntuaciones. No se puede deshacer.</p>
+    <button class="btn-danger btn-block" id="resetBtn">Reiniciar liguilla</button></div>`;
+}
+
+function attachPlayersTabEvents(){
+  document.getElementById('updateNamesBtn').onclick = () => {
+    for(let i=0;i<8;i++){
+      const v = document.getElementById('ename'+i).value.trim();
+      if(v) state.players[i] = v;
+    }
+    saveState(); render();
+  };
+  document.getElementById('resetBtn').onclick = () => {
+    if(confirm('¿Seguro que quieres borrar todas las jornadas y puntos? Los jugadores se mantienen.')){
+      state.matchdays = [];
+      saveState(); render();
+    }
+  };
+}
+
+function renderClasificacion(){
+  const { standings } = computeAll();
+  if(standings.every(s => s.points === 0)){
+    return `<div class="empty">Todavía no hay puntos.<br>Juega la primera jornada para ver la clasificación.</div>`;
+  }
+  const rows = standings.map((s,i) => `
+    <tr class="pos${i+1}">
+      <td><span class="pos">${i+1}</span>${s.name}</td>
+      <td class="num">${s.points}</td>
+      <td class="num">${s.favor}</td>
+      <td class="num">${s.contra}</td>
+      <td class="num">${s.diff>0?'+':''}${s.diff}</td>
+    </tr>`).join('');
+  return `<div class="card">
+    <table>
+      <thead><tr><th>Jugador</th><th class="num">Pts</th><th class="num">GF</th><th class="num">GC</th><th class="num">Dif</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </div>
+  <div style="font-size:12px;color:var(--ink-dim);padding:0 4px">Empate a puntos → gana quien tenga mejor diferencia de juegos (GF−GC); si persiste, más juegos ganados (GF).</div>`;
+}
+
+function renderMatchRow(md, m, roundIdx, isR3){
+  const winnerIdx = matchWinnerPairIdx(m);
+  const aClass = winnerIdx === m.a ? 'winner' : '';
+  const bClass = winnerIdx === m.b ? 'winner' : '';
+  const locked = isLocked(m);
+  const dis = locked ? 'disabled' : '';
+  const timeoutChk = isR3 ? `<label class="timeout-row"><input type="checkbox" data-timeout="1" data-match="${roundIdx}" ${m.timeout?'checked':''} ${dis}> No dio tiempo a terminar</label>` : '';
+
+  let confirmBlock = '';
+  if(matchDone(m)){
+    if(locked){
+      confirmBlock = `<div class="confirm-box locked">✅ Confirmado por ${m.confirmedBy.join(', ')} — resultado bloqueado</div>`;
+    } else {
+      const confirmedNames = m.confirmedBy.length ? `Confirmado por: ${m.confirmedBy.join(', ')} (${m.confirmedBy.length}/${CONFIRMATIONS_NEEDED})` : `Pendiente de confirmar (0/${CONFIRMATIONS_NEEDED})`;
+      const options = state.players.map((n,idx) => `<option value="${idx}">${n}</option>`).join('');
+      confirmBlock = `<div class="confirm-box">
+        <div class="confirm-status">${confirmedNames}</div>
+        <div class="confirm-controls">
+          <select data-match="${roundIdx}" class="confirm-select"><option value="" selected disabled>Confirmo como…</option>${options}</select>
+          <button class="btn-ghost btn-sm" data-confirm="${roundIdx}">Confirmar</button>
+        </div>
+      </div>`;
+    }
+  }
+
+  return `<div class="match">
+      <div class="pairname ${aClass}">${pairName(md, m.a)}</div>
+      <div class="scorebox">
+        <input type="number" min="0" value="${m.ga ?? ''}" data-match="${roundIdx}" data-side="a" ${dis}>
+        <span class="vs">–</span>
+        <input type="number" min="0" value="${m.gb ?? ''}" data-match="${roundIdx}" data-side="b" ${dis}>
+      </div>
+    </div>
+    <div class="pairname ${bClass}" style="text-align:right;font-size:12.5px;color:var(--ink-dim)">${pairName(md, m.b)}</div>
+    ${timeoutChk}
+    ${confirmBlock}`;
+}
+
+function renderJornadas(){
+  let html = `<button class="btn-primary btn-block" id="newJornadaBtn" style="margin-bottom:14px">+ Nueva jornada</button>`;
+  if(state.matchdays.length === 0){
+    html += `<div class="empty">Todavía no hay jornadas.<br>Pulsa arriba para generar la primera con las parejas.</div>`;
+    return html;
+  }
+  const { jornadaWinners } = computeAll();
+
+  [...state.matchdays].map((md,i)=>({md,i})).reverse().forEach(({md,i}) => {
+    const complete = round1Complete(md) && round2Complete(md) && (md.round3Skipped || (md.round3 && matchDone(md.round3[0]) && matchDone(md.round3[1])));
+    const isOpen = openMatchday === i;
+
+    html += `<div class="card ${complete ? 'done' : 'open'}">
+      <div class="jornada-header" data-toggle="${i}">
+        <h3 style="margin:0">Jornada ${i+1}</h3>
+        <span class="tag">${complete ? 'Completa' : 'En curso'} ${isOpen ? '▲' : '▼'}</span>
+      </div>`;
+
+    if(isOpen){
+      html += `<div class="round-title">Parejas</div>`;
+      html += md.pairs.map((p,idx) => `<div style="font-size:13.5px;padding:2px 0">${idx+1}. ${state.players[p[0]]} / ${state.players[p[1]]}</div>`).join('');
+      html += `<div class="skip-note" style="margin-top:6px">Introduce el marcador final de juegos (ej. 6–3, o 5–4 si hubo punto de oro). No pueden quedar iguales, salvo en la Ronda 3 si no da tiempo a terminar.</div>`;
+
+      html += `<div class="round-title">Ronda 1</div>`;
+      html += `<div data-jornada="${i}" data-roundname="round1">`;
+      html += renderMatchRow(md, md.round1[0], 0, false);
+      html += renderMatchRow(md, md.round1[1], 1, false);
+      html += `</div>`;
+
+      if(md.round2){
+        html += `<div class="round-title">Ronda 2</div>`;
+        html += `<div data-jornada="${i}" data-roundname="round2">`;
+        html += renderMatchRow(md, md.round2[0], 0, false);
+        html += renderMatchRow(md, md.round2[1], 1, false);
+        html += `</div>`;
+      } else {
+        html += `<div class="skip-note">Completa la Ronda 1 para desbloquear la Ronda 2.</div>`;
+      }
+
+      if(round2Complete(md)){
+        if(md.round3Skipped){
+          html += `<div class="skip-note">Ronda 3 no jugada (no dio tiempo).</div>
+            <button class="btn-ghost btn-sm" data-unskip="${i}">Deshacer, sí se jugó</button>`;
+        } else if(md.round3){
+          html += `<div class="round-title">Ronda 3</div>`;
+          html += `<div data-jornada="${i}" data-roundname="round3">`;
+          html += renderMatchRow(md, md.round3[0], 0, true);
+          html += renderMatchRow(md, md.round3[1], 1, true);
+          html += `</div>`;
+          html += `<button class="btn-ghost btn-sm" data-skip="${i}" style="margin-top:8px">No dio tiempo a jugar la Ronda 3</button>`;
+        }
+      }
+
+      const dayWinners = jornadaWinners[i] || [];
+      if(dayWinners.length){
+        html += `<div class="winner-strip">🏆 Ganador(es) de la jornada: ${dayWinners.join(', ')}</div>`;
+      }
+    }
+    html += `</div>`;
+  });
+
+  return html;
+}
+
+function attachJornadaEvents(){
+  const newBtn = document.getElementById('newJornadaBtn');
+  if(newBtn) newBtn.onclick = () => {
+    const idx = state.matchdays.length;
+    const schedule = generateSchedule(8);
+    let pairs = schedule[idx % schedule.length].map(p => [...p]);
+    // baraja el orden de enfrentamientos (no afecta a las parejas, solo a quién juega contra quién primero)
+    for(let k = pairs.length-1; k>0; k--){ const j = Math.floor(Math.random()*(k+1)); [pairs[k],pairs[j]]=[pairs[j],pairs[k]]; }
+    const md = {
+      pairs,
+      round1: [ {a:0,b:1,ga:null,gb:null,confirmedBy:[]}, {a:2,b:3,ga:null,gb:null,confirmedBy:[]} ],
+      round2: null, round3: null, round3Skipped: false
+    };
+    state.matchdays.push(md);
+    openMatchday = idx;
+    saveState(); render();
+  };
+
+  document.querySelectorAll('[data-toggle]').forEach(el => {
+    el.onclick = () => {
+      const i = parseInt(el.dataset.toggle);
+      openMatchday = openMatchday === i ? null : i;
+      render();
+    };
+  });
+
+  document.querySelectorAll('input[type=number][data-match]').forEach(inp => {
+    inp.onchange = () => {
+      const card = inp.closest('[data-jornada]');
+      const jIdx = parseInt(card.dataset.jornada);
+      const roundName = card.dataset.roundname;
+      const matchIdx = parseInt(inp.dataset.match);
+      const side = inp.dataset.side;
+      const md = state.matchdays[jIdx];
+      const m = md[roundName][matchIdx];
+      if(isLocked(m)) { render(); return; }
+      const val = inp.value === '' ? null : parseInt(inp.value);
+      if(side === 'a') m.ga = val; else m.gb = val;
+      m.confirmedBy = [];
+      saveState(); render();
+    };
+  });
+
+  document.querySelectorAll('[data-confirm]').forEach(btn => {
+    btn.onclick = () => {
+      const card = btn.closest('[data-jornada]');
+      const jIdx = parseInt(card.dataset.jornada);
+      const roundName = card.dataset.roundname;
+      const matchIdx = parseInt(btn.dataset.confirm);
+      const select = card.querySelector(`.confirm-select[data-match="${matchIdx}"]`);
+      if(!select.value){ alert('Selecciona primero quién confirma.'); return; }
+      const playerName = state.players[parseInt(select.value)];
+      const md = state.matchdays[jIdx];
+      const m = md[roundName][matchIdx];
+      if(isLocked(m)) { render(); return; }
+      if(!m.confirmedBy.includes(playerName)) m.confirmedBy.push(playerName);
+      saveState(); render();
+    };
+  });
+
+  document.querySelectorAll('input[data-timeout]').forEach(chk => {
+    chk.onchange = () => {
+      const card = chk.closest('[data-jornada]');
+      const jIdx = parseInt(card.dataset.jornada);
+      const matchIdx = parseInt(chk.dataset.match);
+      const m = state.matchdays[jIdx].round3[matchIdx];
+      if(isLocked(m)) { render(); return; }
+      m.timeout = chk.checked;
+      m.confirmedBy = [];
+      saveState(); render();
+    };
+  });
+
+  document.querySelectorAll('[data-skip]').forEach(btn => {
+    btn.onclick = () => {
+      const i = parseInt(btn.dataset.skip);
+      state.matchdays[i].round3Skipped = true;
+      state.matchdays[i].round3 = null;
+      saveState(); render();
+    };
+  });
+  document.querySelectorAll('[data-unskip]').forEach(btn => {
+    btn.onclick = () => {
+      const i = parseInt(btn.dataset.unskip);
+      state.matchdays[i].round3Skipped = false;
+      saveState(); render();
+    };
+  });
+}
+
+document.querySelectorAll('.tabbar button').forEach(b => {
+  b.onclick = () => { activeTab = b.dataset.tab; render(); };
+});
+
+document.getElementById('refreshBtn').onclick = async () => {
+  document.getElementById('headerSub').textContent = 'Actualizando…';
+  openMatchday = null;
+  await loadState();
+};
+
+loadState();
+</script>
+</body>
+</html>
