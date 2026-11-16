@@ -235,6 +235,7 @@ function ensureRound3Pairs(md){
 }
 
 const CONFIRMATIONS_NEEDED = 3;
+const UNLOCK_CODE = 'padel2026'; // código para desbloquear un resultado ya confirmado; cámbialo aquí si quieres
 function isLocked(m){ return m.confirmedBy && m.confirmedBy.length >= CONFIRMATIONS_NEEDED; }
 
 function normalizeMatchdays(){
@@ -382,7 +383,8 @@ function renderMatchRow(md, m, roundIdx, isR3){
   let confirmBlock = '';
   if(matchDone(m)){
     if(locked){
-      confirmBlock = `<div class="confirm-box locked">✅ Confirmado por ${m.confirmedBy.join(', ')} — resultado bloqueado</div>`;
+      confirmBlock = `<div class="confirm-box locked">✅ Confirmado por ${m.confirmedBy.join(', ')} — resultado bloqueado
+        <div style="margin-top:6px"><button class="btn-ghost btn-sm" data-unlock="${roundIdx}">Desbloquear para corregir</button></div></div>`;
     } else {
       const confirmedNames = m.confirmedBy.length ? `Confirmado por: ${m.confirmedBy.join(', ')} (${m.confirmedBy.length}/${CONFIRMATIONS_NEEDED})` : `Pendiente de confirmar (0/${CONFIRMATIONS_NEEDED})`;
       const options = state.players.map((n,idx) => `<option value="${idx}">${n}</option>`).join('');
@@ -529,6 +531,21 @@ function attachJornadaEvents(){
       const m = md[roundName][matchIdx];
       if(isLocked(m)) { render(); return; }
       if(!m.confirmedBy.includes(playerName)) m.confirmedBy.push(playerName);
+      saveState(); render();
+    };
+  });
+
+  document.querySelectorAll('[data-unlock]').forEach(btn => {
+    btn.onclick = () => {
+      const card = btn.closest('[data-jornada]');
+      const jIdx = parseInt(card.dataset.jornada);
+      const roundName = card.dataset.roundname;
+      const matchIdx = parseInt(btn.dataset.unlock);
+      const code = prompt('Introduce el código para desbloquear este resultado:');
+      if(code === null) return;
+      if(code.trim() !== UNLOCK_CODE){ alert('Código incorrecto.'); return; }
+      const m = state.matchdays[jIdx][roundName][matchIdx];
+      m.confirmedBy = [];
       saveState(); render();
     };
   });
